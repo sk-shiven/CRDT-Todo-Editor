@@ -4,6 +4,10 @@ from sqlalchemy.orm import Session
 from .database import engine, get_db, Base
 from .schemas import LoginRequest, TokenResponse, SyncRequest
 from .relay import manager
+from . import models
+
+# Ensure tables exist in the configured database
+Base.metadata.create_all(bind=engine)
 
 # TODO: Initialize FastAPI application instance
 app = FastAPI(title="CRDT Todo Op Relay Server")

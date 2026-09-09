@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import AsyncMock
+# pyrefly: ignore [missing-import]
 from app.relay import ConnectionManager
 
 

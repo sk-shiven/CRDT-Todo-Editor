@@ -1,4 +1,4 @@
-import { LWWRegister, LamportClock } from './types';
+import { LWWRegister, LamportClock, compareClocks } from './types';
 
 // Creates a new LWW Register initialized with a value and clock.
 export function createLWWRegister<T>(value: T, clock: LamportClock): LWWRegister<T> {
@@ -11,7 +11,7 @@ export function updateLWWRegister<T>(
   newValue: T,
   newClock: LamportClock
 ): boolean {
-  if (newClock.counter > register.clock.counter) {
+  if (compareClocks(newClock, register.clock) > 0) {
     register.value = newValue;
     register.clock = newClock;
     return true;

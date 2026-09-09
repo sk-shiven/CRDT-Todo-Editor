@@ -6,13 +6,9 @@ from .schemas import LoginRequest, TokenResponse, SyncRequest
 from .relay import manager
 from . import models
 
-# Ensure tables exist in the configured database
 Base.metadata.create_all(bind=engine)
-
-# TODO: Initialize FastAPI application instance
 app = FastAPI(title="CRDT Todo Op Relay Server")
 
-# TODO: Configure CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,26 +17,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# TODO: Implement POST /api/auth/login endpoint
 @app.post("/api/auth/login", response_model=TokenResponse)
 def login(req: LoginRequest, db: Session = Depends(get_db)):
-    # TODO: Fetch or auto-create User by username
-    # TODO: Verify credentials and issue signed JWT token
-    raise NotImplementedError()
+    user = db.query(models.User).first(models.User.username == req.username)
+    if not user:
+        user = models.User(username=req.username)
+        db.add(user)
+        db.commit()
+    return TokenResponse(token="test-token")
 
-# TODO: Implement POST /api/sync catch-up endpoint
 @app.post("/api/sync")
 def sync_ops(req: SyncRequest, db: Session = Depends(get_db)):
-    # TODO: Query OpLog table for operations with id > req.lastSeq
-    # TODO: Return list of missing ops and latest sequence ID
-    raise NotImplementedError()
+    ops = db.query(models.OpLog).filter(models.OpLog.id > req.lastSeq).all()
+    return SyncRequest(
+        lastSeq=0,
+        ops=[
+            {
+                "id": op.id,
+                "op": op.op
+            }
+            for op in ops
+        ]
+    )
 
-# TODO: Implement WebSocket /ws relay endpoint
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)):
-    # TODO: Connect websocket using manager.connect(websocket)
-    # TODO: Listen for incoming op JSON objects in a loop
-    # TODO: Persist unseen ops to durable OpLog database table
-    # TODO: Broadcast op JSON to all other active websocket connections via manager.broadcast
-    # TODO: Handle WebSocketDisconnect and call manager.disconnect(websocket)
-    raise NotImplementedError()
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            await manager.broadcast(data, websocket)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)    

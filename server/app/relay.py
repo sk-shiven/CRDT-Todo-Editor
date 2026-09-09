@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import WebSocket
 
 class ConnectionManager:
@@ -9,15 +9,27 @@ class ConnectionManager:
         self.active_connections: List[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
-        # TODO: Accept websocket connection and append to active_connections list
-        raise NotImplementedError()
+        # Accept websocket connection and append to active_connections list
+        await websocket.accept()
+        self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):
-        # TODO: Remove websocket from active_connections list on disconnect
-        raise NotImplementedError()
+        # Remove websocket from active_connections list on disconnect
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
 
-    async def broadcast(self, message: dict, sender: WebSocket = None):
-        # TODO: Send message JSON to all active_connections except the optional sender websocket
-        raise NotImplementedError()
+    async def broadcast(self, message: dict, sender: Optional[WebSocket] = None):
+        # Send message JSON to all active_connections except the optional sender websocket
+        disconnected = []
+        for connection in list(self.active_connections):
+            if connection != sender:
+                try:
+                    await connection.send_json(message)
+                except Exception:
+                    disconnected.append(connection)
+
+        for dead_conn in disconnected:
+            if dead_conn in self.active_connections:
+                self.active_connections.remove(dead_conn)
 
 manager = ConnectionManager()

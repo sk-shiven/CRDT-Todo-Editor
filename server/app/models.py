@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, JSON
 from .database import Base
 
-# TODO: Define User ORM model for authentication
 class User(Base):
     __tablename__ = "users"
 
@@ -9,7 +8,6 @@ class User(Base):
     username = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
 
-# TODO: Define OpLog ORM model for append-only operation log
 class OpLog(Base):
     __tablename__ = "op_log"
 
